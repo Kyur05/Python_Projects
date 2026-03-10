@@ -1,5 +1,5 @@
 Chainage,Topography,Curve_Type,Design_Speed,Gradient,K_Value,Gradient_Report,K_Value_Report
-PI_101,Flat,Crest,120,3.5,150,PASS[PI_101]: 3.5% is within TRH17 limit of 4.0% for Flat terrain at 120 km/h.,PASS[PI_101]: K-value of 150.0 meets TRH17 minimum of 113 for Crest curve at 120 km/h.
-PI_102,Rolling,Sag,100,6.5,30,Critical[PI_102]: 6.5% exceeds TRH17 limit of 6.0% for Rolling terrain at 100 km/h.,Critical[PI_102]: K-value of 30.0 is below TRH17 minimum of 37 for Sag curve at 100 km/h.
-PI_103,Mountainous,Crest,80,-9.0,20,Critical[PI_103]: 9.0% exceeds TRH17 limit of 8.0% for Mountainous terrain at 80 km/h.,PASS[PI_103]: K-value of 20.0 meets TRH17 minimum of 11 for Crest curve at 80 km/h.
-PI_104,Flat,Sag,80,2.0,80,PASS[PI_104]: 2.0% is within TRH17 limit of 6.0% for Flat terrain at 80 km/h.,PASS[PI_104]: K-value of 80.0 meets TRH17 minimum of 15 for Sag curve at 80 km/h.
+PI_101,Flat,Crest,120,3.5,150,PASS[PI_101]: 3.5% is within TRH17 limit of 4.0% for Flat terrain at 120 km/h.,PASS[PI_101]: K-value of 150.0 meets TRH17 minimum of 80 for Crest curve at 120 km/h.
+PI_102,Rolling,Sag,100,6.5,30,Critical[PI_102]: 6.5% exceeds TRH17 limit of 6.0% for Rolling terrain at 100 km/h.,Critical[PI_102]: K-value of 30.0 is below TRH17 minimum of 40 for Sag curve at 100 km/h.
+PI_103,Mountainous,Crest,80,-9.0,20,Critical[PI_103]: 9.0% exceeds TRH17 limit of 8.0% for Mountainous terrain at 80 km/h.,Critical[PI_103]: K-value of 20.0 is below TRH17 minimum of 30 for Crest curve at 80 km/h.
+PI_104,Flat,Sag,80,2.0,80,PASS[PI_104]: 2.0% is within TRH17 limit of 6.0% for Flat terrain at 80 km/h.,PASS[PI_104]: K-value of 80.0 meets TRH17 minimum of 25 for Sag curve at 80 km/h.

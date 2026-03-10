@@ -66,69 +66,80 @@ def check_k_value(curve_name, design_speed, curve_type, actual_k):
     else:
         return f"PASS[{curve_name}]: K-value of {actual_k} meets TRH17 minimum of {min_k} for {curve_type} curve at {design_speed} km/h."
 
-# --- THE EXCEL BATCH PROCESSOR ---
-def process_survey_data(file_name):
-    print(f"\n📂 Reading {file_name} and generating Excel Report...")
-    output_filename = "TRH17_Design_Report.xlsx"  # Generating a true Excel file now
+import xml.etree.ElementTree as ET
+import openpyxl
+from openpyxl.styles import Font
 
-    # 1. Create a blank Excel workbook in Python's memory
+# --- THE LANDXML TO EXCEL AUTOMATION ENGINE ---
+def process_landxml_to_excel(xml_file, speed, topo):
+    print(f"\n🚀 Processing {xml_file} and calculating TRH17 Compliance...")
+    output_filename = "N2_TRH17_Master_Report.xlsx"
+
+    # 1. Setup the Blank Excel Report
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "TRH17 Compliance"
-
-    # 2. Write the Header Row and make it BOLD
-    headers = ["Chainage", "Topography", "Curve_Type", "Design_Speed", "Gradient", "K_Value", "Gradient_Report", "K_Value_Report"]
-    ws.append(headers)
+    ws.title = "Vertical Alignment Checks"
     
-    for cell in ws[1]:  # Targets the very first row in the sheet
-        cell.font = Font(bold=True)
+    headers = ["Chainage", "Element", "Length (m)", "G1 (%)", "G2 (%)", "K-Value", "Curve Type", "TRH17 Status"]
+    ws.append(headers)
+    for cell in ws[1]: cell.font = Font(bold=True)
 
-    # 3. Read the raw CSV data and process it
     try:
-        with open(file_name, mode="r") as infile:
-            reader = csv.DictReader(infile)
-            
-            for row in reader:
-                # Extract exact data
-                seg_name = row["Chainage"]
-                topo = row["Topography"]
-                curve = row["Curve_Type"]
-                speed = int(row["Design_Speed"])
-                grad = float(row["Gradient"])
-                k_val = float(row["K_Value"])
-                
-                # Run the localized TRH17 machines
-                grad_result = check_sa_gradient(seg_name, topo, speed, grad)
-                k_result = check_k_value(seg_name, speed, curve, k_val)
-                
-                # 4. Append the fully processed row directly to the new Excel sheet
-                ws.append([seg_name, topo, curve, speed, grad, k_val, grad_result, k_result])
+        # 2. Extract Raw Coordinates from Civil 3D
+        tree = ET.parse(xml_file)
+        root = tree.getroot()
+        points = []
 
-        # 5. Physically save the Excel file to your hard drive
+        for element in root.iter():
+            clean_tag = element.tag.split('}')[-1]
+            if clean_tag in ['PVI', 'ParaCurve']:
+                if element.text and element.text.strip():
+                    data = element.text.strip().split()
+                    chainage = float(data[0])
+                    elev = float(data[1])
+                    length = float(element.get('length', 0)) if clean_tag == 'ParaCurve' else 0
+                    
+                    points.append({'chainage': chainage, 'elev': elev, 'length': length, 'tag': clean_tag})
+
+        # 3. Calculate Engineering Math & Run TRH17 Checks
+        for i in range(1, len(points) - 1):
+            prev_pt = points[i-1]
+            curr_pt = points[i]
+            next_pt = points[i+1]
+
+            # Calculate entering (G1) and exiting (G2) gradients
+            dx1 = curr_pt['chainage'] - prev_pt['chainage']
+            dy1 = curr_pt['elev'] - prev_pt['elev']
+            g1 = (dy1 / dx1 * 100) if dx1 != 0 else 0
+
+            dx2 = next_pt['chainage'] - curr_pt['chainage']
+            dy2 = next_pt['elev'] - curr_pt['elev']
+            g2 = (dy2 / dx2 * 100) if dx2 != 0 else 0
+
+            # 4. Evaluate Curves vs Tangents
+            if curr_pt['tag'] == 'ParaCurve':
+                A = abs(g2 - g1)
+                k_val = curr_pt['length'] / A if A != 0 else 0
+                curve_type = "Crest" if g1 > g2 else "Sag"
+
+                # Run your TRH17 Curve Machine
+                status = check_k_value(f"CH {curr_pt['chainage']:.0f}", speed, curve_type, k_val)
+                ws.append([f"{curr_pt['chainage']:.2f}", "Curve", curr_pt['length'], f"{g1:.2f}", f"{g2:.2f}", f"{k_val:.2f}", curve_type, status])
+            
+            else:
+                # Run your TRH17 Tangent Machine
+                status = check_sa_gradient(f"CH {curr_pt['chainage']:.0f}", topo, speed, g1)
+                ws.append([f"{curr_pt['chainage']:.2f}", "Tangent", "-", f"{g1:.2f}", "-", "-", "-", status])
+
+        # 5. Save the finished report
         wb.save(output_filename)
-        print(f"✅ Excel Report successfully generated: {output_filename}")
-        
+        print(f"✅ Excel Report Successfully Generated: {output_filename}")
+
     except FileNotFoundError:
-        print(f"❌ ERROR: Could not find '{file_name}'.")
-# --- The Execution ---
-# Run file directly
+        print(f"❌ ERROR: Could not find '{xml_file}'.")
+
+# --- THE CORRECTION ---
+# Make sure this 'if' statement is pushed tight against the left wall!
 if __name__ == "__main__":
-    while True:
-        seg_name = input("\nEnter Segment or Curve Name (or type 'exit'): ")
-        if seg_name.lower() == "exit":
-            print("Exiting the tool. Goodbye!")
-            break
-        topo = input("Enter Topography (Flat, Rolling, Mountainous): ")
-        curve = input("Enter Curve Type (Crest or Sag): ")
-        try:
-            speed = int(input("Enter Design Speed in km/h (120, 100, 80, 60): "))
-            grad = float(input("Enter Gradient Percentage (e.g., -5.0 or 7.5): "))
-            k_val = float(input("Enter K-Value: "))
-            grad_result = check_sa_gradient(seg_name, topo, speed, grad)
-            k_result = check_k_value(seg_name, speed, curve, k_val)
-            print("\n--- TRH17 Evaluation Report ---")
-            print(grad_result)
-            print(k_result)
-        except ValueError:
-            print("Please enter a numeric value.")
-    process_survey_data("survey_export.csv")  
+    # Process the N2 LandXML file at 120 km/h in Rolling terrain
+    process_landxml_to_excel("road_export.xml", 120, "Rolling")

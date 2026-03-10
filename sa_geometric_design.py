@@ -1,6 +1,7 @@
 import csv
 import openpyxl
 from openpyxl.styles import Font
+import physics_engine
 print("=== South African TRH17 Geometric Design Tool ===")
 #1. NESTED DICTIONARY: TRH17 Max Gradients
 #Structure: {Topography: {Design_Speed: Max Gradient}}
@@ -70,44 +71,75 @@ import xml.etree.ElementTree as ET
 import openpyxl
 from openpyxl.styles import Font
 
-# --- THE LANDXML TO EXCEL AUTOMATION ENGINE ---
+# --- THE ADVANCED LANDXML TO EXCEL AUTOMATION ENGINE ---
 def process_landxml_to_excel(xml_file, speed, topo):
-    print(f"\n🚀 Processing {xml_file} and calculating TRH17 Compliance...")
-    output_filename = "N2_TRH17_Master_Report.xlsx"
+    print(f"\n🚀 Processing {xml_file} with advanced TRH17 Physics Engine...")
+    output_filename = "N2_Master_Geometric_Report.xlsx"
 
-    # 1. Setup the Blank Excel Report
+    # 1. Setup the Multi-Sheet Excel Workbook
     wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Vertical Alignment Checks"
     
-    headers = ["Chainage", "Element", "Length (m)", "G1 (%)", "G2 (%)", "K-Value", "Curve Type", "TRH17 Status"]
-    ws.append(headers)
-    for cell in ws[1]: cell.font = Font(bold=True)
+    # --- SHEET 1: VERTICAL DESIGN & DRAINAGE ---
+    ws_vert = wb.active
+    ws_vert.title = "Vertical Checks"
+    vert_headers = ["PVI CH", "PVI Elev", "G1 (%)", "G2 (%)", "Length", "Curve Type", "K-Value", "BVC CH", "EVC CH", "Turn CH (Drain)", "Turn Elev", "Req SSD (m)"]
+    ws_vert.append(vert_headers)
+    for cell in ws_vert[1]: cell.font = Font(bold=True)
+
+    # --- SHEET 2: HORIZONTAL DESIGN & CHORDS ---
+    ws_horiz = wb.create_sheet(title="Horizontal Checks")
+    horiz_headers = ["Element", "Radius (m)", "Length", "TRH17 Min R", "Req Superelev (%)", "Status", "20m Survey Chords"]
+    ws_horiz.append(horiz_headers)
+    for cell in ws_horiz[1]: cell.font = Font(bold=True)
 
     try:
-        # 2. Extract Raw Coordinates from Civil 3D
         tree = ET.parse(xml_file)
         root = tree.getroot()
-        points = []
+        vert_points = []
+        curve_count = 1
 
+        # 2. Extract Raw Coordinates
         for element in root.iter():
             clean_tag = element.tag.split('}')[-1]
-            if clean_tag in ['PVI', 'ParaCurve']:
+            
+            # --- HORIZONTAL PROCESSING ---
+            if clean_tag == 'Curve':
+                radius_str = element.get('radius')
+                length_str = element.get('length')
+                
+                if radius_str and length_str:
+                    radius = abs(float(radius_str))
+                    length = float(length_str)
+                    
+                    # Call the Physics Engine!
+                    horiz_data = physics_engine.calculate_horizontal_parameters(speed, radius)
+                    chords = physics_engine.calculate_setting_out_chords(radius, length)
+                    
+                    # Join the surveyor chords into a readable string (e.g., "30.1, 30.1, 15.2")
+                    chord_string = ", ".join(map(str, chords))
+                    
+                    ws_horiz.append([
+                        f"Curve {curve_count}", f"{radius:.2f}", f"{length:.2f}", 
+                        horiz_data['R_min_required'], horiz_data['e_required_percent'], 
+                        horiz_data['status'], chord_string
+                    ])
+                    curve_count += 1
+
+            # --- VERTICAL EXTRACTION ---
+            elif clean_tag in ['PVI', 'ParaCurve']:
                 if element.text and element.text.strip():
                     data = element.text.strip().split()
                     chainage = float(data[0])
                     elev = float(data[1])
                     length = float(element.get('length', 0)) if clean_tag == 'ParaCurve' else 0
-                    
-                    points.append({'chainage': chainage, 'elev': elev, 'length': length, 'tag': clean_tag})
+                    vert_points.append({'chainage': chainage, 'elev': elev, 'length': length, 'tag': clean_tag})
+        
+        # --- VERTICAL PROCESSING ---
+        for i in range(1, len(vert_points) - 1):
+            prev_pt = vert_points[i-1]
+            curr_pt = vert_points[i]
+            next_pt = vert_points[i+1]
 
-        # 3. Calculate Engineering Math & Run TRH17 Checks
-        for i in range(1, len(points) - 1):
-            prev_pt = points[i-1]
-            curr_pt = points[i]
-            next_pt = points[i+1]
-
-            # Calculate entering (G1) and exiting (G2) gradients
             dx1 = curr_pt['chainage'] - prev_pt['chainage']
             dy1 = curr_pt['elev'] - prev_pt['elev']
             g1 = (dy1 / dx1 * 100) if dx1 != 0 else 0
@@ -116,30 +148,31 @@ def process_landxml_to_excel(xml_file, speed, topo):
             dy2 = next_pt['elev'] - curr_pt['elev']
             g2 = (dy2 / dx2 * 100) if dx2 != 0 else 0
 
-            # 4. Evaluate Curves vs Tangents
+            # Calculate Stopping Sight Distance for the approaching gradient
+            ssd = physics_engine.calculate_ssd(speed, g1)
+
             if curr_pt['tag'] == 'ParaCurve':
-                A = abs(g2 - g1)
-                k_val = curr_pt['length'] / A if A != 0 else 0
-                curve_type = "Crest" if g1 > g2 else "Sag"
-
-                # Run your TRH17 Curve Machine
-                status = check_k_value(f"CH {curr_pt['chainage']:.0f}", speed, curve_type, k_val)
-                ws.append([f"{curr_pt['chainage']:.2f}", "Curve", curr_pt['length'], f"{g1:.2f}", f"{g2:.2f}", f"{k_val:.2f}", curve_type, status])
-            
+                # Call the Physics Engine for Vertical Geometry!
+                v_data = physics_engine.calculate_vertical_geometry(curr_pt['chainage'], curr_pt['elev'], g1, g2, curr_pt['length'])
+                
+                ws_vert.append([
+                    f"{curr_pt['chainage']:.2f}", f"{curr_pt['elev']:.2f}", f"{g1:.2f}", f"{g2:.2f}", 
+                    curr_pt['length'], v_data['Curve_Type'], v_data['K_Value'], 
+                    v_data['BVC_CH'], v_data['EVC_CH'], v_data['Turn_CH'], v_data['Turn_Elev'], ssd
+                ])
             else:
-                # Run your TRH17 Tangent Machine
-                status = check_sa_gradient(f"CH {curr_pt['chainage']:.0f}", topo, speed, g1)
-                ws.append([f"{curr_pt['chainage']:.2f}", "Tangent", "-", f"{g1:.2f}", "-", "-", "-", status])
+                ws_vert.append([
+                    f"{curr_pt['chainage']:.2f}", f"{curr_pt['elev']:.2f}", f"{g1:.2f}", f"{g2:.2f}", 
+                    "-", "Tangent", "-", "-", "-", "-", "-", ssd
+                ])
 
-        # 5. Save the finished report
+        # 3. Save the Master Report
         wb.save(output_filename)
-        print(f"✅ Excel Report Successfully Generated: {output_filename}")
+        print(f"✅ Advanced Master Report Successfully Generated: {output_filename}")
 
     except FileNotFoundError:
         print(f"❌ ERROR: Could not find '{xml_file}'.")
 
-# --- THE CORRECTION ---
-# Make sure this 'if' statement is pushed tight against the left wall!
 if __name__ == "__main__":
     # Process the N2 LandXML file at 120 km/h in Rolling terrain
     process_landxml_to_excel("road_export.xml", 120, "Rolling")

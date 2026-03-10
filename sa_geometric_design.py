@@ -1,4 +1,6 @@
 import csv
+import openpyxl
+from openpyxl.styles import Font
 print("=== South African TRH17 Geometric Design Tool ===")
 #1. NESTED DICTIONARY: TRH17 Max Gradients
 #Structure: {Topography: {Design_Speed: Max Gradient}}
@@ -64,43 +66,50 @@ def check_k_value(curve_name, design_speed, curve_type, actual_k):
     else:
         return f"PASS[{curve_name}]: K-value of {actual_k} meets TRH17 minimum of {min_k} for {curve_type} curve at {design_speed} km/h."
 
-# --- THE BATCH PROCESSOR ---
+# --- THE EXCEL BATCH PROCESSOR ---
 def process_survey_data(file_name):
-    print(f"\n📂 Reading {file_name}...")
-    output_filename = "TRH17_Design_Report.csv"
+    print(f"\n📂 Reading {file_name} and generating Excel Report...")
+    output_filename = "TRH17_Design_Report.xlsx"  # Generating a true Excel file now
 
-    # We open BOTH files on a single line to prevent indentation nightmares
-    with open(file_name, mode="r") as infile, open(output_filename, mode="w", newline="") as outfile:
-        
-        reader = csv.DictReader(infile)
-        
-        # This dynamically grabs the exact headers from your CSV and adds our two new columns!
-        fieldnames = reader.fieldnames + ["Gradient_Report", "K_Value_Report"]
-        
-        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
-        writer.writeheader()
-        
-        for row in reader:
-            # Extract data using the exact CSV headers (with underscores)
-            seg_name = row["Chainage"]
-            topo = row["Topography"]
-            curve = row["Curve_Type"]
-            speed = int(row["Design_Speed"])
-            grad = float(row["Gradient"])
-            k_val = float(row["K_Value"])
+    # 1. Create a blank Excel workbook in Python's memory
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "TRH17 Compliance"
+
+    # 2. Write the Header Row and make it BOLD
+    headers = ["Chainage", "Topography", "Curve_Type", "Design_Speed", "Gradient", "K_Value", "Gradient_Report", "K_Value_Report"]
+    ws.append(headers)
+    
+    for cell in ws[1]:  # Targets the very first row in the sheet
+        cell.font = Font(bold=True)
+
+    # 3. Read the raw CSV data and process it
+    try:
+        with open(file_name, mode="r") as infile:
+            reader = csv.DictReader(infile)
             
-            # Feed the data into your existing TRH17 machines
-            grad_result = check_sa_gradient(seg_name, topo, speed, grad)
-            k_result = check_k_value(seg_name, speed, curve, k_val)
-            
-            # Add the new reports directly into the row dictionary
-            row["Gradient_Report"] = grad_result
-            row["K_Value_Report"] = k_result
-            
-            # Write the updated row
-            writer.writerow(row)
-            
-    print(f"✅ Batch complete! Saved as: {output_filename}")
+            for row in reader:
+                # Extract exact data
+                seg_name = row["Chainage"]
+                topo = row["Topography"]
+                curve = row["Curve_Type"]
+                speed = int(row["Design_Speed"])
+                grad = float(row["Gradient"])
+                k_val = float(row["K_Value"])
+                
+                # Run the localized TRH17 machines
+                grad_result = check_sa_gradient(seg_name, topo, speed, grad)
+                k_result = check_k_value(seg_name, speed, curve, k_val)
+                
+                # 4. Append the fully processed row directly to the new Excel sheet
+                ws.append([seg_name, topo, curve, speed, grad, k_val, grad_result, k_result])
+
+        # 5. Physically save the Excel file to your hard drive
+        wb.save(output_filename)
+        print(f"✅ Excel Report successfully generated: {output_filename}")
+        
+    except FileNotFoundError:
+        print(f"❌ ERROR: Could not find '{file_name}'.")
 # --- The Execution ---
 # Run file directly
 if __name__ == "__main__":

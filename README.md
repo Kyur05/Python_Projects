@@ -12,3 +12,5 @@ An automated Python tool built to parse Civil 3D LandXML data and evaluate road 
 Before running the tool, ensure you have the required Excel library installed:
 ```bash
 python -m pip install openpyxl
+```
+![VS Code editor showing Python project structure with TRH17 Geometric Design Evaluator README file open, displaying installation instructions. The file explorer on the left shows project folders including build, dist, and files like sa_geometric_design.py, app.py, batch_processor.py, and survey data CSV exports. The main editor displays markdown content with features section and installation setup instructions for the openpyxl library.]

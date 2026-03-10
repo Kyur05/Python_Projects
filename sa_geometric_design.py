@@ -1,3 +1,4 @@
+import csv
 print("=== South African TRH17 Geometric Design Tool ===")
 #1. NESTED DICTIONARY: TRH17 Max Gradients
 #Structure: {Topography: {Design_Speed: Max Gradient}}
@@ -67,6 +68,43 @@ print(check_k_value("Curve 1", 120, "Crest", 100))
 print(check_k_value("Curve 2", 100, "Sag", 40))
 print(check_k_value("Curve 3", 80, "Crest", 15))
 
+# --- THE BATCH PROCESSOR ---
+def process_survey_data(file_name):
+    print(f"\n📂 Reading {file_name}...")
+    output_filename = "TRH17_Design_Report.csv"
+
+    # We open BOTH files on a single line to prevent indentation nightmares
+    with open(file_name, mode="r") as infile, open(output_filename, mode="w", newline="") as outfile:
+        
+        reader = csv.DictReader(infile)
+        
+        # This dynamically grabs the exact headers from your CSV and adds our two new columns!
+        fieldnames = reader.fieldnames + ["Gradient_Report", "K_Value_Report"]
+        
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+        writer.writeheader()
+        
+        for row in reader:
+            # Extract data using the exact CSV headers (with underscores)
+            seg_name = row["Chainage"]
+            topo = row["Topography"]
+            curve = row["Curve_Type"]
+            speed = int(row["Design_Speed"])
+            grad = float(row["Gradient"])
+            k_val = float(row["K_Value"])
+            
+            # Feed the data into your existing TRH17 machines
+            grad_result = check_sa_gradient(seg_name, topo, speed, grad)
+            k_result = check_k_value(seg_name, speed, curve, k_val)
+            
+            # Add the new reports directly into the row dictionary
+            row["Gradient_Report"] = grad_result
+            row["K_Value_Report"] = k_result
+            
+            # Write the updated row
+            writer.writerow(row)
+            
+    print(f"✅ Batch complete! Saved as: {output_filename}")
 print("\n=== TRH17 Master Evaluator (Interactive) ===")
 while True:
     seg_name = input("\nEnter Segment or Curve Name(or type 'exit' to quit):")
@@ -85,4 +123,5 @@ while True:
         print(gradient_result)
         print(k_value_result)
     except ValueError:
-        print("Invalid input. Please enter numeric values for speed, gradient, and K-value.")   
+        print("Invalid input. Please enter numeric values for speed, gradient, and K-value.") 
+process_survey_data("survey_export.csv")  

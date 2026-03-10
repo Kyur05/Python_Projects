@@ -1,3 +1,8 @@
 .vscode/
 *.log
 __pycache__/
+# PyInstaller folders and files
+build/
+dist/
+*.spec
+*.exe

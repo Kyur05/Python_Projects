@@ -140,11 +140,12 @@ def process_landxml_to_excel(xml_file, speed, topo):
         print(f"ERROR: Could not find '{xml_file}'.")
 
 if __name__ == "__main__":
-    # If Dynamo is sending data, sys.argv will have more than 1 item
-    if len(sys.argv) > 1:
-        dynamo_speed = int(sys.argv[1])
-        dynamo_topo = sys.argv[2]
-        process_landxml_to_excel("road_export.xml", dynamo_speed, dynamo_topo)
+    # If Dynamo is sending data, it will now send 3 things: The XML Path, Speed, and Topo
+    if len(sys.argv) > 3:
+        xml_path = sys.argv[1]
+        dynamo_speed = int(sys.argv[2])
+        dynamo_topo = sys.argv[3]
+        process_landxml_to_excel(xml_path, dynamo_speed, dynamo_topo)
     else:
         # Fallback if you just click Play in VS Code manually
         process_landxml_to_excel("road_export.xml", 120, "Rolling")

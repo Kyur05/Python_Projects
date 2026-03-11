@@ -37,14 +37,23 @@
       "Value": "Rolling",
       "Description": "Creates a string",
       "SelectedIndex": 0
+    },
+    {
+      "Id": "b9513cbd56b640c7885ce8410116e3ea",
+      "Name": "Select LandXML File",
+      "Type": "string",
+      "Type2": "string",
+      "Value": "No file selected.",
+      "Description": "Allows you to select a file on the system and returns its file path",
+      "SelectedIndex": 0
     }
   ],
   "Outputs": [
     {
       "Id": "b421d52bf5fe4c81b96d4988044ddd6a",
       "Name": "Watch",
-      "Type": "string",
-      "InitialValue": "✅ SUCCESS: Excel Report Generated!\n=== South African TRH17 Geometric Design Tool ===\n\nProcessing road_export.xml using Memory-Optimized Streaming...\nAdvanced Master Report Successfully Generated: N2_Master_Geometric_Report.xlsx\n",
+      "Type": "unknown",
+      "InitialValue": "",
       "Description": "Visualizes a node's output"
     }
   ],
@@ -117,7 +126,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "import sys\r\nimport subprocess\r\nimport os\r\n\r\n# 1. Grab the inputs from the Dynamo wires\r\nscript_path = IN[0]\r\nspeed = str(IN[1])\r\ntopo = IN[2]\r\n\r\n# 2. Extract the exact folder where your script lives\r\nwork_dir = os.path.dirname(script_path)\r\n\r\n# 3. Fire the command line, forcing it to run inside that folder\r\ntry:\r\n    result = subprocess.run(\r\n        [r\"C:\\Users\\kymaharaj\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe\", script_path, speed, topo], \r\n        cwd=work_dir,  # <-- THIS IS THE MAGIC FIX\r\n        capture_output=True, \r\n        text=True,\r\n        check=True\r\n    )\r\n    OUT = \"✅ SUCCESS: Excel Report Generated!\\n\" + result.stdout\r\nexcept subprocess.CalledProcessError as e:\r\n    # If the VS Code script fails, this will print the exact reason\r\n    OUT = \"❌ SCRIPT ERROR:\\n\" + e.stderr + \"\\n\" + e.stdout\r\nexcept Exception as e:\r\n    # If Windows fails to find Python entirely\r\n    OUT = \"❌ SYSTEM ERROR: \" + str(e)",
+      "Code": "import sys\r\nimport subprocess\r\nimport os\r\n\r\n# 1. Grab the inputs from the Dynamo wires\r\nscript_path = IN[0]\r\nspeed = str(IN[1])\r\ntopo = IN[2]\r\nxml_path = IN[3]  \r\n\r\n# 2. Extract the exact folder where your script lives\r\nwork_dir = os.path.dirname(script_path)\r\n\r\n# 3. Fire the command line, passing the XML path to the engine\r\ntry:\r\n    result = subprocess.run(\r\n        [r\"C:\\Users\\kymaharaj\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe\", script_path, xml_path, speed, topo],\r\n        cwd=work_dir,\r\n        capture_output=True, \r\n        text=True,\r\n        check=True\r\n    )\r\n    OUT = \"[SUCCESS] Excel Report Generated!\\n\" + result.stdout\r\nexcept subprocess.CalledProcessError as e:\r\n    # If the VS Code script fails, this will print the exact reason\r\n    OUT = \"❌ SCRIPT ERROR:\\n\" + e.stderr + \"\\n\" + e.stdout\r\nexcept Exception as e:\r\n    # If Windows fails to find Python entirely\r\n    OUT = \"❌ SYSTEM ERROR: \" + str(e)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -145,6 +154,15 @@
           "Id": "851e85b636f34e52bf59dd501d4a6673",
           "Name": "IN[2]",
           "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "cb008ea59d0e4d58b316c3c24a38bebb",
+          "Name": "IN[3]",
+          "Description": "Input #3",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -193,6 +211,27 @@
       ],
       "Replication": "Disabled",
       "Description": "Visualizes a node's output"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
+      "HintPath": "",
+      "InputValue": "No file selected.",
+      "NodeType": "ExtensionNode",
+      "Id": "b9513cbd56b640c7885ce8410116e3ea",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "f2a0076da20645fca7e4c690c7bf778f",
+          "Name": "",
+          "Description": "File Path",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows you to select a file on the system and returns its file path"
     }
   ],
   "Connectors": [
@@ -219,18 +258,16 @@
       "End": "96d43cb7cd0b44c592079b2afb42553d",
       "Id": "c34809a55ae94fdda8fc1621e5f272f3",
       "IsHidden": "False"
+    },
+    {
+      "Start": "f2a0076da20645fca7e4c690c7bf778f",
+      "End": "cb008ea59d0e4d58b316c3c24a38bebb",
+      "Id": "2b12e7ca57aa48719ba8f0959f9947c6",
+      "IsHidden": "False"
     }
   ],
   "Dependencies": [],
-  "NodeLibraryDependencies": [
-    {
-      "Name": "sa_geometric_design.py",
-      "ReferenceType": "External",
-      "Nodes": [
-        "3fd4497761b34293af04b8a04cbeb572"
-      ]
-    }
-  ],
+  "NodeLibraryDependencies": [],
   "Thumbnail": "",
   "GraphDocumentationURL": null,
   "ExtensionWorkspaceData": [
@@ -321,6 +358,16 @@
         "Excluded": false,
         "X": 1051.2,
         "Y": 119.20000000000005
+      },
+      {
+        "Name": "Select LandXML File",
+        "ShowGeometry": true,
+        "Id": "b9513cbd56b640c7885ce8410116e3ea",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 364.7999999999999,
+        "Y": 557.6
       }
     ],
     "Annotations": [],

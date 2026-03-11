@@ -1,0 +1,331 @@
+{
+  "Uuid": "b4bf2c6e-fb3a-4972-8b48-e9320ef77b9e",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "TRH17_GEOMETRIC_EVALUATOR",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [
+    {
+      "Id": "3fd4497761b34293af04b8a04cbeb572",
+      "Name": "File Path",
+      "Type": "string",
+      "Type2": "string",
+      "Value": "C:\\Users\\kymaharaj\\OneDrive - INGEROP\\Desktop\\Python_Projects\\sa_geometric_design.py",
+      "Description": "Allows you to select a file on the system and returns its file path",
+      "SelectedIndex": 0
+    },
+    {
+      "Id": "4837499fdbd142a5987b6d1baa27c461",
+      "Name": "Integer Slider",
+      "Type": "number",
+      "Type2": "number",
+      "Value": "115",
+      "MaximumValue": 120.0,
+      "MinimumValue": 0.0,
+      "StepValue": 1.0,
+      "NumberType": "Integer",
+      "Description": "Produces integer values",
+      "SelectedIndex": 0
+    },
+    {
+      "Id": "ea7d78454b304f21b40a382d8565f5b6",
+      "Name": "String",
+      "Type": "string",
+      "Type2": "string",
+      "Value": "Rolling",
+      "Description": "Creates a string",
+      "SelectedIndex": 0
+    }
+  ],
+  "Outputs": [
+    {
+      "Id": "b421d52bf5fe4c81b96d4988044ddd6a",
+      "Name": "Watch",
+      "Type": "string",
+      "InitialValue": "✅ SUCCESS: Excel Report Generated!\n=== South African TRH17 Geometric Design Tool ===\n\nProcessing road_export.xml using Memory-Optimized Streaming...\nAdvanced Master Report Successfully Generated: N2_Master_Geometric_Report.xlsx\n",
+      "Description": "Visualizes a node's output"
+    }
+  ],
+  "Nodes": [
+    {
+      "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
+      "HintPath": "C:\\Users\\kymaharaj\\OneDrive - INGEROP\\Desktop\\Python_Projects\\sa_geometric_design.py",
+      "InputValue": "C:\\Users\\kymaharaj\\OneDrive - INGEROP\\Desktop\\Python_Projects\\sa_geometric_design.py",
+      "NodeType": "ExtensionNode",
+      "Id": "3fd4497761b34293af04b8a04cbeb572",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "e9c39ebb41a84cefa91fb590f6994b53",
+          "Name": "",
+          "Description": "File Path",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows you to select a file on the system and returns its file path"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
+      "NodeType": "NumberInputNode",
+      "NumberType": "Integer",
+      "InputValue": 115,
+      "MaximumValue": 120,
+      "MinimumValue": 0,
+      "StepValue": 1,
+      "Id": "4837499fdbd142a5987b6d1baa27c461",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "b04f64f388d6487db809a6ce845949f8",
+          "Name": "",
+          "Description": "Int64",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Produces integer values"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.StringInput, CoreNodeModels",
+      "NodeType": "StringInputNode",
+      "InputValue": "Rolling",
+      "Id": "ea7d78454b304f21b40a382d8565f5b6",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "7e266ef714284c119154532bd3597fa7",
+          "Name": "",
+          "Description": "String",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a string"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "import sys\r\nimport subprocess\r\nimport os\r\n\r\n# 1. Grab the inputs from the Dynamo wires\r\nscript_path = IN[0]\r\nspeed = str(IN[1])\r\ntopo = IN[2]\r\n\r\n# 2. Extract the exact folder where your script lives\r\nwork_dir = os.path.dirname(script_path)\r\n\r\n# 3. Fire the command line, forcing it to run inside that folder\r\ntry:\r\n    result = subprocess.run(\r\n        [r\"C:\\Users\\kymaharaj\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe\", script_path, speed, topo], \r\n        cwd=work_dir,  # <-- THIS IS THE MAGIC FIX\r\n        capture_output=True, \r\n        text=True,\r\n        check=True\r\n    )\r\n    OUT = \"✅ SUCCESS: Excel Report Generated!\\n\" + result.stdout\r\nexcept subprocess.CalledProcessError as e:\r\n    # If the VS Code script fails, this will print the exact reason\r\n    OUT = \"❌ SCRIPT ERROR:\\n\" + e.stderr + \"\\n\" + e.stdout\r\nexcept Exception as e:\r\n    # If Windows fails to find Python entirely\r\n    OUT = \"❌ SYSTEM ERROR: \" + str(e)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "8d03b584b63044ceae6099b9191165c9",
+      "Inputs": [
+        {
+          "Id": "f555e78d2e554ffa84e73fafa1c0e3ca",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "2328f39a3ce8458d89948d52d4341811",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "851e85b636f34e52bf59dd501d4a6673",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b6453bb183d9461799ba8480bad0122e",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "NodeType": "ExtensionNode",
+      "Id": "b421d52bf5fe4c81b96d4988044ddd6a",
+      "Inputs": [
+        {
+          "Id": "96d43cb7cd0b44c592079b2afb42553d",
+          "Name": "",
+          "Description": "Node to show output from",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a326c6bda1ae4883bb4fb735636d38b5",
+          "Name": "",
+          "Description": "Node output",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualizes a node's output"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "e9c39ebb41a84cefa91fb590f6994b53",
+      "End": "f555e78d2e554ffa84e73fafa1c0e3ca",
+      "Id": "36c82329bfd147e6ace017b6797bb158",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b04f64f388d6487db809a6ce845949f8",
+      "End": "2328f39a3ce8458d89948d52d4341811",
+      "Id": "78c2bc4fdd9a48e4bfee464227525a1a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "7e266ef714284c119154532bd3597fa7",
+      "End": "851e85b636f34e52bf59dd501d4a6673",
+      "Id": "046a5d028c9f471db6ec3f948ae401eb",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b6453bb183d9461799ba8480bad0122e",
+      "End": "96d43cb7cd0b44c592079b2afb42553d",
+      "Id": "c34809a55ae94fdda8fc1621e5f272f3",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [
+    {
+      "Name": "sa_geometric_design.py",
+      "ReferenceType": "External",
+      "Nodes": [
+        "3fd4497761b34293af04b8a04cbeb572"
+      ]
+    }
+  ],
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "2.17",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.17.0.3472",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Name": "File Path",
+        "ShowGeometry": true,
+        "Id": "3fd4497761b34293af04b8a04cbeb572",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 379.2,
+        "Y": 146.40000000000003
+      },
+      {
+        "Name": "Integer Slider",
+        "ShowGeometry": true,
+        "Id": "4837499fdbd142a5987b6d1baa27c461",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 398.40000000000003,
+        "Y": 291.99999999999994
+      },
+      {
+        "Name": "String",
+        "ShowGeometry": true,
+        "Id": "ea7d78454b304f21b40a382d8565f5b6",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 455.19999999999993,
+        "Y": 415.2
+      },
+      {
+        "Name": "Python Script",
+        "ShowGeometry": true,
+        "Id": "8d03b584b63044ceae6099b9191165c9",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1229.6000000000001,
+        "Y": 440.80000000000007
+      },
+      {
+        "Name": "Watch",
+        "ShowGeometry": true,
+        "Id": "b421d52bf5fe4c81b96d4988044ddd6a",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": true,
+        "Excluded": false,
+        "X": 1051.2,
+        "Y": 119.20000000000005
+      }
+    ],
+    "Annotations": [],
+    "X": 0.0,
+    "Y": 0.0,
+    "Zoom": 1.0
+  }
+}
